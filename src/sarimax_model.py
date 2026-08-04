@@ -18,6 +18,7 @@ finishes.
 from __future__ import annotations
 
 import itertools
+import json
 import warnings
 
 import matplotlib
@@ -47,26 +48,58 @@ def _fit(endog, order, seasonal_order, exog=None, maxiter=50):
     return model.fit(disp=False, maxiter=maxiter, method="lbfgs")
 
 
+def param_grid(p_range=config.P_RANGE, d_range=config.D_RANGE,
+               q_range=config.Q_RANGE):
+    """Every (p, d, q) combination the grid search will attempt.
+
+    With the assignment ranges (p 0-6, d 0-2, q 0-6) this is exactly
+    7 * 3 * 7 = 147 combinations.
+    """
+    return list(itertools.product(p_range, d_range, q_range))
+
+
 def grid_search(endog, exog=None,
                 seasonal_order=(1, 0, 1, config.DAILY_SEASON),
                 p_range=config.P_RANGE, d_range=config.D_RANGE,
                 q_range=config.Q_RANGE, verbose=True):
-    """Return (best_order, best_aic, results_table) by AIC."""
+    """Loop over every (p, d, q), selecting the lowest-AIC model.
+
+    Returns (best_order, best_aic, results_table). Every attempt is recorded,
+    including failures, so the saved CSV proves all 147 combinations were
+    tried. Columns: p, d, q, seasonal_order, aic, status, error.
+    """
+    combos = param_grid(p_range, d_range, q_range)
     rows, best = [], (None, np.inf)
-    for p, d, q in itertools.product(p_range, d_range, q_range):
+    for p, d, q in combos:
+        row = {"p": p, "d": d, "q": q,
+               "seasonal_order": str(seasonal_order),
+               "aic": np.nan, "status": "ok", "error": ""}
         try:
             res = _fit(endog, (p, d, q), seasonal_order, exog)
-            aic = res.aic
-            rows.append({"p": p, "d": d, "q": q, "aic": aic})
-            if np.isfinite(aic) and aic < best[1]:
+            aic = float(res.aic)
+            row["aic"] = aic
+            if not np.isfinite(aic):
+                row["status"] = "non_finite_aic"
+            elif aic < best[1]:
                 best = ((p, d, q), aic)
             if verbose:
                 print(f"  ARIMA({p},{d},{q}) AIC={aic:.1f}")
         except Exception as e:
-            rows.append({"p": p, "d": d, "q": q, "aic": np.nan})
+            row["status"] = "failed"
+            row["error"] = str(e).replace("\n", " ")[:300]
             if verbose:
                 print(f"  ARIMA({p},{d},{q}) failed: {e}")
-    table = pd.DataFrame(rows).sort_values("aic").reset_index(drop=True)
+        rows.append(row)
+
+    table = pd.DataFrame(rows)
+    n_attempted = len(table)
+    n_ok = int((table["status"] == "ok").sum())
+    print(f"[sarimax] attempted {n_attempted} combinations "
+          f"({n_ok} succeeded, {n_attempted - n_ok} failed/non-finite)")
+    # keep natural (attempt) order in the file, best model floats to the notes
+    table = table.sort_values("aic", na_position="last").reset_index(drop=True)
+    if best[0] is None:
+        raise RuntimeError("SARIMAX grid search: no model converged.")
     return best[0], best[1], table
 
 
@@ -120,17 +153,39 @@ def run(df, horizon=config.HORIZON, use_exog=True, fast=False, verbose=False):
         train, exog, seasonal, p_range, d_range, q_range, verbose=verbose)
     table.to_csv(config.METRIC_DIR / "sarimax_grid.csv", index=False)
 
+    # refit the chosen model on the (capped) training data
     res = _fit(train, order, seasonal, exog, maxiter=200)
     diag = residual_diagnostics(res)
     mean, lo, hi = forecast(res, horizon, exog_future)
+    mean = np.clip(mean.values, 0, None)  # appliance use cannot be negative
+
+    # persist the selected model so it is reproducible and easy to cite
+    summary = {
+        "order": list(order),
+        "seasonal_order": list(seasonal),
+        "aic": float(aic),
+        "n_combinations_attempted": int(len(table)),
+        "n_combinations_succeeded": int((table["status"] == "ok").sum()),
+        "ljung_box_stat": diag["ljung_box_stat"],
+        "ljung_box_pvalue": diag["ljung_box_pvalue"],
+        "train_days": config.SARIMAX_TRAIN_DAYS,
+        "used_exog": bool(exog is not None),
+        "exog_cols": EXOG_COLS if exog is not None else [],
+        "conditional_forecast": bool(exog is not None),
+    }
+    (config.METRIC_DIR / "sarimax_summary.json").write_text(
+        json.dumps(summary, indent=2))
+    pd.DataFrame([summary]).to_csv(
+        config.METRIC_DIR / "sarimax_summary.csv", index=False)
 
     return {
         "name": "SARIMAX",
         "order": order, "seasonal_order": seasonal, "aic": aic,
-        "forecast": pd.Series(mean.values, index=test.index),
-        "lower": pd.Series(lo.values, index=test.index),
+        "forecast": pd.Series(mean, index=test.index),
+        "lower": pd.Series(np.clip(lo.values, 0, None), index=test.index),
         "upper": pd.Series(hi.values, index=test.index),
-        "metrics": score(test.values, mean.values),
+        "metrics": score(test.values, mean),
         "diagnostics": diag,
+        "summary": summary,
         "train_tail": train_full, "test": test,
     }

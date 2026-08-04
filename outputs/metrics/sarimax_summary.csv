@@ -1,0 +1,2 @@
+order,seasonal_order,aic,n_combinations_attempted,n_combinations_succeeded,ljung_box_stat,ljung_box_pvalue,train_days,used_exog,exog_cols,conditional_forecast
+"[3, 0, 6]","[1, 0, 1, 24]",15131.7452715878,147,147,14.783395602344186,0.9269367647160465,45,True,"['T_out', 'RH_out']",True

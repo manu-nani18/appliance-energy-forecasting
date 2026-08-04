@@ -1,0 +1,25 @@
+{
+  "order": [
+    3,
+    0,
+    6
+  ],
+  "seasonal_order": [
+    1,
+    0,
+    1,
+    24
+  ],
+  "aic": 15131.7452715878,
+  "n_combinations_attempted": 147,
+  "n_combinations_succeeded": 147,
+  "ljung_box_stat": 14.783395602344186,
+  "ljung_box_pvalue": 0.9269367647160465,
+  "train_days": 45,
+  "used_exog": true,
+  "exog_cols": [
+    "T_out",
+    "RH_out"
+  ],
+  "conditional_forecast": true
+}

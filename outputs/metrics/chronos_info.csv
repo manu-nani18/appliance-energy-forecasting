@@ -1,0 +1,2 @@
+model_name,device,used_gpu,used_fallback,horizon
+amazon/chronos-t5-small,cpu,False,False,24

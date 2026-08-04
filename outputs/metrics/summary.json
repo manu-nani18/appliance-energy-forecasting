@@ -1,0 +1,66 @@
+{
+  "best_benchmark": "Mean",
+  "sarimax_order": [
+    [
+      3,
+      0,
+      6
+    ],
+    [
+      1,
+      0,
+      1,
+      24
+    ]
+  ],
+  "metrics": {
+    "Mean": {
+      "RMSE": 502.167,
+      "MAE": 370.401,
+      "MAPE": 47.456,
+      "sMAPE": 48.526
+    },
+    "Naive": {
+      "RMSE": 717.85,
+      "MAE": 652.5,
+      "MAPE": 145.088,
+      "sMAPE": 72.443
+    },
+    "SeasonalNaive-daily": {
+      "RMSE": 652.987,
+      "MAE": 364.167,
+      "MAPE": 45.178,
+      "sMAPE": 33.614
+    },
+    "SeasonalNaive-weekly": {
+      "RMSE": 561.779,
+      "MAE": 359.583,
+      "MAPE": 33.729,
+      "sMAPE": 46.432
+    },
+    "Drift": {
+      "RMSE": 720.152,
+      "MAE": 654.509,
+      "MAPE": 145.587,
+      "sMAPE": 72.56
+    },
+    "SARIMAX": {
+      "RMSE": 482.138,
+      "MAE": 367.442,
+      "MAPE": 51.335,
+      "sMAPE": 48.444
+    },
+    "XGBoost": {
+      "RMSE": 377.194,
+      "MAE": 296.674,
+      "MAPE": 48.729,
+      "sMAPE": 37.244
+    },
+    "Chronos": {
+      "RMSE": 499.041,
+      "MAE": 312.283,
+      "MAPE": 28.887,
+      "sMAPE": 36.658
+    }
+  }
+}

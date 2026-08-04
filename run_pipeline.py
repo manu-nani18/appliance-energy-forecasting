@@ -30,6 +30,9 @@ def main():
                     help="use synthetic data (no download)")
     ap.add_argument("--no-foundation", action="store_true",
                     help="skip the Chronos foundation model")
+    ap.add_argument("--allow-chronos-fallback", action="store_true",
+                    help="offline dev only: substitute seasonal-naive if "
+                         "Chronos cannot run (NOT for final results)")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -82,10 +85,11 @@ def main():
     # ---- Part 7: foundation model -----------------------------------------
     if not args.no_foundation:
         print("\n== Part 7: Chronos foundation model ==")
-        fm = foundation.run(df)
+        fm = foundation.run(df, allow_fallback=args.allow_chronos_fallback)
         metrics[fm["name"]] = fm["metrics"]
         forecasts[fm["name"]] = fm["forecast"]
-        print(f"  {fm['name']} RMSE={fm['metrics']['RMSE']:.2f}")
+        print(f"  {fm['name']} RMSE={fm['metrics']['RMSE']:.2f}  "
+              f"(model={fm['info']['model_name']}, device={fm['info']['device']})")
         plot_forecast(fm["train_tail"], fm["test"], fm["forecast"],
                       f"{fm['name']} 24h forecast", "12_chronos_forecast.png",
                       lower=fm["lower"], upper=fm["upper"])

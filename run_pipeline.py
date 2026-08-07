@@ -1,20 +1,7 @@
-"""End-to-end pipeline for the appliance-energy forecasting study.
-
-Runs every part of the assignment in order and writes all figures, metric
-tables and the model-comparison table to outputs/.
-
-Usage
------
-    python run_pipeline.py                # full run (downloads real data)
-    python run_pipeline.py --fast         # small SARIMAX grid (quick check)
-    python run_pipeline.py --synthetic    # offline demo on synthetic data
-    python run_pipeline.py --no-foundation  # skip Chronos (no download)
-"""
 from __future__ import annotations
 
 import argparse
 import json
-
 import pandas as pd
 
 from src import config, data, eda, benchmarks, sarimax_model, ml_model

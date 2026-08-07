@@ -14,3 +14,8 @@ data/raw/*.zip
 # Model / OS junk
 *.ckpt
 .DS_Store
+Thumbs.db
+
+# Office temp / lock files (e.g. ~$Report.docx)
+~$*
+*.tmp

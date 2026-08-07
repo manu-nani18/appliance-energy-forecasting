@@ -69,9 +69,6 @@ real data, searches the **full** SARIMAX grid, and runs the **real** Chronos
 model (no fallback). `--fast` is for sanity checks only and must not be used
 for the results you report.
 
-> **Time warning.** The full SARIMAX grid attempts 147 (p, d, q) combinations,
-> each with a daily seasonal component (m = 24). On a typical laptop this takes
-> roughly **10-40 minutes** depending on CPU. Use `--fast` while developing.
 
 Every figure lands in `outputs/figures/` and every metric table in
 `outputs/metrics/` (`model_comparison.csv` is the headline result).
